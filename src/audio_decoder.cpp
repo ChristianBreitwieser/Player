@@ -19,7 +19,6 @@
 #include <cassert>
 #include <cstring>
 #include "audio_decoder.h"
-#include "filefinder.h"
 #include "output.h"
 #include "system.h"
 #include "utils.h"
@@ -119,7 +118,7 @@ public:
 		error_message = std::string("WMA audio files are not supported. Reinstall the\n") +
 			"game and don't convert them when asked by Windows!\n";
 	}
-	bool Open(FILE*) override { return false; }
+	bool Open(std::shared_ptr<FileFinder::istream> stream) override { return false; }
 	bool IsFinished() const override { return true; }
 	void GetFormat(int&, Format&, int&) const override {}
 private:
@@ -127,10 +126,10 @@ private:
 };
 const char wma_magic[] = { (char)0x30, (char)0x26, (char)0xB2, (char)0x75 };
 
-std::unique_ptr<AudioDecoder> AudioDecoder::Create(FILE* file, const std::string& filename) {
+std::unique_ptr<AudioDecoder> AudioDecoder::Create(std::shared_ptr<FileFinder::istream> stream, const std::string& filename) {
 	char magic[4] = { 0 };
-	fread(magic, 4, 1, file);
-	fseek(file, 0, SEEK_SET);
+	stream->read(magic, sizeof(magic));
+	stream->seekg(std::ios::ios_base::beg);
 
 #if !(defined(HAVE_WILDMIDI) || defined(HAVE_XMP))
 	/* WildMidi and XMP are the only audio decoders that need the filename passed
@@ -254,8 +253,9 @@ std::unique_ptr<AudioDecoder> AudioDecoder::Create(FILE* file, const std::string
 		}
 
 		// Parsing MP3s seems to be the only reliable way to detect them
-		if (Mpg123Decoder::IsMp3(file)) {
-			fseek(file, 0, SEEK_SET);
+		if (Mpg123Decoder::IsMp3(stream)) {
+			stream->clear();
+			stream->seekg(0, std::ios::ios_base::beg);
 #  ifdef USE_AUDIO_RESAMPLER
 			mp3dec = new AudioResampler(new Mpg123Decoder());
 #  else
@@ -273,7 +273,8 @@ std::unique_ptr<AudioDecoder> AudioDecoder::Create(FILE* file, const std::string
 	}
 #endif
 
-	fseek(file, 0, SEEK_SET);
+	stream->clear(); 
+	stream->seekg(0, std::ios::ios_base::beg);
 	return nullptr;
 }
 

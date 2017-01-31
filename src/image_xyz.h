@@ -18,13 +18,13 @@
 #ifndef _EASYRPG_IMAGE_XYZ_H_
 #define _EASYRPG_IMAGE_XYZ_H_
 
-#include <cstdio>
+#include "filefinder.h"
 #include "system.h"
 #ifdef SUPPORT_XYZ
 
 namespace ImageXYZ {
 	bool ReadXYZ(const uint8_t* data, unsigned len, bool transparent, int& width, int& height, void*& pixels);
-	bool ReadXYZ(std::istream & stream, bool transparent, int& width, int& height, void*& pixels);
+	bool ReadXYZ(FileFinder::istream & stream, bool transparent, int& width, int& height, void*& pixels);
 }
 
 #endif // SUPPORT_XYZ
