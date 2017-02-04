@@ -64,15 +64,15 @@ bool set_channel_format(int dsp_chn, AudioDecoder::Format format, int channels, 
 }
 
 void CtrAudio::BGM_Play(std::string const& file, int volume, int pitch, int fadein) {
-	FILE* filehandle = FileFinder::fopenUTF8(file, "rb");
-	if (!filehandle) {
+	auto filestream = FileFinder::openUTF8Input(file, std::ios::ios_base::in | std::ios::ios_base::binary);
+	if (!filestream) {
 		Output::Warning("Audio not readable: %s", file.c_str());
 		return;
 	}
 
 	LockMutex();
-	bgm_decoder = AudioDecoder::Create(filehandle, file);
-	if (bgm_decoder && bgm_decoder->Open(filehandle)) {
+	bgm_decoder = AudioDecoder::Create(filestream, file);
+	if (bgm_decoder && bgm_decoder->Open(filestream)) {
 		int frequency;
 		AudioDecoder::Format format, out_format;
 		int channels;
@@ -90,7 +90,6 @@ void CtrAudio::BGM_Play(std::string const& file, int volume, int pitch, int fade
 		Output::Debug("Audio started: %s, samplerate: %u, pitch: %u", file.c_str(),frequency,pitch);
 	} else {
 		Output::Debug("Audioformat of %s not supported: %s", file.c_str(),file.c_str());
-		fclose(filehandle);
 	}
 	
 	UnlockMutex();
